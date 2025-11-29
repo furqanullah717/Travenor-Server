@@ -1,0 +1,67 @@
+[versions]
+kotlin = "2.2.20"
+ktor = "3.3.2"
+logback = "1.4.14"
+exposed = "0.49.0"
+h2 = "2.2.224"
+postgresql = "42.7.1"
+mysql = "8.0.33"
+hikaricp = "5.1.0"
+bcrypt = "0.4"
+jwt = "4.4.0"
+kotlinx-serialization = "1.6.2"
+swagger = "2.2.22"
+swagger-ui = "5.10.3"
+stripe = "24.16.0"
+
+[libraries]
+ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+
+# Content Negotiation
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation-jvm", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json-jvm", version.ref = "ktor" }
+
+# Authentication
+ktor-server-auth = { module = "io.ktor:ktor-server-auth-jvm", version.ref = "ktor" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt-jvm", version.ref = "ktor" }
+
+# CORS
+ktor-server-cors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor" }
+
+# Status Pages
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages-jvm", version.ref = "ktor" }
+
+# Database
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
+h2-database = { module = "com.h2database:h2", version.ref = "h2" }
+postgresql-driver = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+mysql-driver = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
+
+# Security
+bcrypt = { module = "org.mindrot:jbcrypt", version.ref = "bcrypt" }
+jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
+
+# Serialization
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+
+# Swagger/OpenAPI
+swagger-core = { module = "io.swagger.core.v3:swagger-core", version.ref = "swagger" }
+swagger-models = { module = "io.swagger.core.v3:swagger-models", version.ref = "swagger" }
+swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
+
+# Stripe
+stripe-java = { module = "com.stripe:stripe-java", version.ref = "stripe" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

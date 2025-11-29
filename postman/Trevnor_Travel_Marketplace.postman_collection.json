@@ -1,0 +1,778 @@
+{
+	"info": {
+		"_postman_id": "trevnor-travel-marketplace",
+		"name": "Trevnor Travel Marketplace API",
+		"description": "Complete API collection for Trevnor Travel Marketplace including full booking flow automation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Setup",
+			"item": [
+				{
+					"name": "1. Seed Database",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.test(\"Database seeded\", function () {",
+									"    pm.expect(response.message).to.include(\"seeded\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/seed",
+							"host": ["{{base_url}}"],
+							"path": ["seed"]
+						},
+					"description": "Seed the database with test users and listings"
+					}
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "1. Register Customer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"if (response.token) {",
+									"    pm.environment.set(\"customer_token\", response.token);",
+									"    pm.environment.set(\"customer_id\", response.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"customer1@trevnor.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"Alice\",\n    \"lastName\": \"Customer\",\n    \"phone\": \"+1234567892\",\n    \"role\": \"CUSTOMER\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "2. Login Customer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"if (response.token) {",
+									"    pm.environment.set(\"customer_token\", response.token);",
+									"    pm.environment.set(\"customer_id\", response.user.id);",
+									"    pm.environment.set(\"customer_email\", response.user.email);",
+									"    console.log(\"Token saved:\", response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"customer1@trevnor.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "3. Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "me"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Listings",
+			"item": [
+				{
+					"name": "1. Search Listings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"if (response.listings && response.listings.length > 0) {",
+									"    pm.environment.set(\"listing_id\", response.listings[0].id);",
+									"    pm.environment.set(\"listing_price\", response.listings[0].price);",
+									"    console.log(\"Selected listing:\", response.listings[0].title);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/listings?category=HOTEL&page=1&pageSize=10",
+							"host": ["{{base_url}}"],
+							"path": ["listings"],
+							"query": [
+								{
+									"key": "category",
+									"value": "HOTEL"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "2. Get Listing Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.environment.set(\"listing_id\", response.id);",
+									"pm.environment.set(\"listing_price\", response.price);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/listings/{{listing_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["listings", "{{listing_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Booking Flow",
+			"item": [
+				{
+					"name": "1. Check Availability",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.test(\"Listing is available\", function () {",
+									"    pm.expect(response.available).to.be.true;",
+									"});",
+									"",
+									"if (response.priceCalculation) {",
+									"    pm.environment.set(\"booking_total\", response.priceCalculation.total);",
+									"    console.log(\"Total price:\", response.priceCalculation.total);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"listingId\": \"{{listing_id}}\",\n    \"checkInDate\": \"2024-12-15T00:00:00Z\",\n    \"checkOutDate\": \"2024-12-20T00:00:00Z\",\n    \"numberOfGuests\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/bookings/check-availability",
+							"host": ["{{base_url}}"],
+							"path": ["bookings", "check-availability"]
+						}
+					}
+				},
+				{
+					"name": "2. Create Booking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.environment.set(\"booking_id\", response.id);",
+									"pm.environment.set(\"booking_status\", response.status);",
+									"pm.environment.set(\"booking_total_price\", response.totalPrice);",
+									"console.log(\"Booking created:\", response.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"listingId\": \"{{listing_id}}\",\n    \"checkInDate\": \"2024-12-15T00:00:00Z\",\n    \"checkOutDate\": \"2024-12-20T00:00:00Z\",\n    \"numberOfGuests\": 2,\n    \"specialRequests\": \"Late check-in requested\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/bookings",
+							"host": ["{{base_url}}"],
+							"path": ["bookings"]
+						}
+					}
+				},
+				{
+					"name": "3. Get Booking Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/bookings/{{booking_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["bookings", "{{booking_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Payment Flow",
+			"item": [
+				{
+					"name": "1. Create Payment Intent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.environment.set(\"payment_intent_id\", response.paymentIntentId);",
+									"pm.environment.set(\"client_secret\", response.clientSecret);",
+									"console.log(\"Payment Intent created:\", response.paymentIntentId);",
+									"console.log(\"Client Secret:\", response.clientSecret);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"bookingId\": \"{{booking_id}}\",\n    \"currency\": \"usd\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/payments/intent",
+							"host": ["{{base_url}}"],
+							"path": ["payments", "intent"]
+						}
+					}
+				},
+				{
+					"name": "2. Get Payment Intent Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/payments/intent/{{payment_intent_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["payments", "intent", "{{payment_intent_id}}"]
+						}
+					}
+				},
+				{
+					"name": "3. Simulate Payment Success (Update Status)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.test(\"Payment status is PAID\", function () {",
+									"    pm.expect(response.paymentStatus).to.equal(\"PAID\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paymentStatus\": \"PAID\",\n    \"paymentId\": \"{{payment_intent_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/bookings/{{booking_id}}/payment",
+							"host": ["{{base_url}}"],
+							"path": ["bookings", "{{booking_id}}", "payment"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Complete Flow Automation",
+			"item": [
+				{
+					"name": "Full Booking Flow",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Set base URL if not set",
+									"if (!pm.environment.get(\"base_url\")) {",
+									"    pm.environment.set(\"base_url\", \"http://localhost:8080\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Complete flow executed\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Vendor Operations",
+			"item": [
+				{
+					"name": "1. Login as Vendor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"if (response.token) {",
+									"    pm.environment.set(\"vendor_token\", response.token);",
+									"    pm.environment.set(\"vendor_id\", response.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"vendor1@trevnor.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "2. Create Listing",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.environment.set(\"vendor_listing_id\", response.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{vendor_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"New Luxury Hotel\",\n    \"description\": \"A beautiful luxury hotel with amazing amenities\",\n    \"category\": \"HOTEL\",\n    \"location\": \"Paris, France\",\n    \"city\": \"Paris\",\n    \"country\": \"France\",\n    \"price\": 250.00,\n    \"currency\": \"USD\",\n    \"capacity\": 4,\n    \"amenities\": [\"WiFi\", \"Pool\", \"Spa\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/listings",
+							"host": ["{{base_url}}"],
+							"path": ["listings"]
+						}
+					}
+				},
+				{
+					"name": "3. Get My Listings",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{vendor_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/listings/vendor/my-listings",
+							"host": ["{{base_url}}"],
+							"path": ["listings", "vendor", "my-listings"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Reviews",
+			"item": [
+				{
+					"name": "1. Create Review",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"pm.environment.set(\"review_id\", response.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"listingId\": \"{{listing_id}}\",\n    \"bookingId\": \"{{booking_id}}\",\n    \"rating\": 5,\n    \"title\": \"Amazing experience!\",\n    \"comment\": \"Had a wonderful time. Highly recommended!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reviews",
+							"host": ["{{base_url}}"],
+							"path": ["reviews"]
+						}
+					}
+				},
+				{
+					"name": "2. Get Listing Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reviews/listing/{{listing_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["reviews", "listing", "{{listing_id}}"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
+

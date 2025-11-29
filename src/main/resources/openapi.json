@@ -1,0 +1,598 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Trevnor Travel Marketplace API",
+    "version": "1.0.0",
+    "description": "Comprehensive API for the Trevnor Travel Marketplace platform. This API allows users to browse travel listings, make bookings, leave reviews, and manage their travel experiences.\n\n## Authentication\nMost endpoints require JWT authentication. Register or login to get a token, then include it in the Authorization header:\n```\nAuthorization: Bearer <your-token>\n```\n\n## User Roles\n- **CUSTOMER**: Can browse listings, make bookings, and leave reviews\n- **VENDOR**: Can create and manage travel listings\n- **ADMIN**: Full access including user and content moderation",
+    "contact": {
+      "name": "Trevnor API Support",
+      "email": "support@trevnor.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token obtained from /auth/login or /auth/register"
+      }
+    },
+    "schemas": {
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "firstName": { "type": "string", "nullable": true },
+          "lastName": { "type": "string", "nullable": true },
+          "phone": { "type": "string", "nullable": true },
+          "role": { "type": "string", "enum": ["CUSTOMER", "VENDOR", "ADMIN"] },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 6 },
+          "firstName": { "type": "string", "nullable": true },
+          "lastName": { "type": "string", "nullable": true },
+          "phone": { "type": "string", "nullable": true },
+          "role": { "type": "string", "default": "CUSTOMER", "enum": ["CUSTOMER", "VENDOR", "ADMIN"] }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/UserResponse" }
+        }
+      },
+      "ListingResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "vendorId": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "category": { "type": "string", "enum": ["HOTEL", "FLIGHT", "ACTIVITY", "PACKAGE"] },
+          "location": { "type": "string" },
+          "city": { "type": "string", "nullable": true },
+          "country": { "type": "string", "nullable": true },
+          "price": { "type": "number", "format": "double" },
+          "currency": { "type": "string", "default": "USD" },
+          "capacity": { "type": "integer", "nullable": true },
+          "availableFrom": { "type": "string", "format": "date-time", "nullable": true },
+          "availableTo": { "type": "string", "format": "date-time", "nullable": true },
+          "images": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "amenities": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "rating": { "type": "number", "format": "double" },
+          "reviewCount": { "type": "integer" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateListingRequest": {
+        "type": "object",
+        "required": ["title", "description", "category", "location", "price"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "category": { "type": "string", "enum": ["HOTEL", "FLIGHT", "ACTIVITY", "PACKAGE"] },
+          "location": { "type": "string" },
+          "city": { "type": "string", "nullable": true },
+          "country": { "type": "string", "nullable": true },
+          "price": { "type": "number", "format": "double" },
+          "currency": { "type": "string", "default": "USD" },
+          "capacity": { "type": "integer", "nullable": true },
+          "availableFrom": { "type": "string", "format": "date-time", "nullable": true },
+          "availableTo": { "type": "string", "format": "date-time", "nullable": true },
+          "images": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "amenities": { "type": "array", "items": { "type": "string" }, "nullable": true }
+        }
+      },
+      "BookingResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "customerId": { "type": "string", "format": "uuid" },
+          "listingId": { "type": "string", "format": "uuid" },
+          "checkInDate": { "type": "string", "format": "date-time", "nullable": true },
+          "checkOutDate": { "type": "string", "format": "date-time", "nullable": true },
+          "numberOfGuests": { "type": "integer", "default": 1 },
+          "totalPrice": { "type": "number", "format": "double" },
+          "currency": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"] },
+          "paymentStatus": { "type": "string", "enum": ["PENDING", "PAID", "REFUNDED"] },
+          "paymentId": { "type": "string", "nullable": true },
+          "specialRequests": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateBookingRequest": {
+        "type": "object",
+        "required": ["listingId"],
+        "properties": {
+          "listingId": { "type": "string", "format": "uuid" },
+          "checkInDate": { "type": "string", "format": "date-time", "nullable": true },
+          "checkOutDate": { "type": "string", "format": "date-time", "nullable": true },
+          "numberOfGuests": { "type": "integer", "default": 1 },
+          "specialRequests": { "type": "string", "nullable": true }
+        }
+      },
+      "ReviewResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "customerId": { "type": "string", "format": "uuid" },
+          "listingId": { "type": "string", "format": "uuid" },
+          "bookingId": { "type": "string", "format": "uuid", "nullable": true },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "title": { "type": "string", "nullable": true },
+          "comment": { "type": "string", "nullable": true },
+          "isVerified": { "type": "boolean" },
+          "isApproved": { "type": "boolean" },
+          "customerName": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateReviewRequest": {
+        "type": "object",
+        "required": ["listingId", "rating"],
+        "properties": {
+          "listingId": { "type": "string", "format": "uuid" },
+          "bookingId": { "type": "string", "format": "uuid", "nullable": true },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "title": { "type": "string", "nullable": true },
+          "comment": { "type": "string", "nullable": true }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "409": {
+            "description": "User already exists",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get current user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Current user information",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get current user profile",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update current user profile",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": { "type": "string" },
+                  "lastName": { "type": "string" },
+                  "phone": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/listings": {
+      "get": {
+        "tags": ["Listings"],
+        "summary": "Search and list travel listings",
+        "description": "Public endpoint to search and filter travel listings",
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string", "enum": ["HOTEL", "FLIGHT", "ACTIVITY", "PACKAGE"] } },
+          { "name": "location", "in": "query", "schema": { "type": "string" } },
+          { "name": "city", "in": "query", "schema": { "type": "string" } },
+          { "name": "country", "in": "query", "schema": { "type": "string" } },
+          { "name": "minPrice", "in": "query", "schema": { "type": "number" } },
+          { "name": "maxPrice", "in": "query", "schema": { "type": "number" } },
+          { "name": "minRating", "in": "query", "schema": { "type": "number" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "listings": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ListingResponse" }
+                    },
+                    "total": { "type": "integer" },
+                    "page": { "type": "integer" },
+                    "pageSize": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Listings"],
+        "summary": "Create a new travel listing",
+        "description": "VENDOR or ADMIN role required",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateListingRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Listing created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ListingResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - VENDOR or ADMIN role required" }
+        }
+      }
+    },
+    "/listings/{id}": {
+      "get": {
+        "tags": ["Listings"],
+        "summary": "Get listing by ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listing details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ListingResponse" }
+              }
+            }
+          },
+          "404": { "description": "Listing not found" }
+        }
+      },
+      "put": {
+        "tags": ["Listings"],
+        "summary": "Update listing",
+        "description": "Only listing owner or ADMIN can update",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listing updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ListingResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Listing not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Listings"],
+        "summary": "Delete listing",
+        "description": "Only listing owner or ADMIN can delete",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Listing deleted" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Listing not found" }
+        }
+      }
+    },
+    "/bookings": {
+      "post": {
+        "tags": ["Bookings"],
+        "summary": "Create a new booking",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateBookingRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BookingResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get user's bookings",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of bookings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BookingResponse" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/bookings/{id}": {
+      "get": {
+        "tags": ["Bookings"],
+        "summary": "Get booking by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BookingResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Booking not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Bookings"],
+        "summary": "Cancel booking",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking cancelled",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BookingResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Booking not found" }
+        }
+      }
+    },
+    "/reviews": {
+      "post": {
+        "tags": ["Reviews"],
+        "summary": "Create a new review",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateReviewRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReviewResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/reviews/listing/{listingId}": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Get reviews for a listing",
+        "parameters": [
+          { "name": "listingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reviews",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReviewResponse" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
