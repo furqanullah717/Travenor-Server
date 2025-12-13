@@ -4,11 +4,10 @@ import com.codewithfk.database.DatabaseFactory
 import com.codewithfk.dto.UserResponse
 import com.codewithfk.models.UserRole
 import com.codewithfk.models.Users
-import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.mindrot.jbcrypt.BCrypt
 import kotlinx.datetime.Clock
+import org.jetbrains.exposed.sql.selectAll
 import java.util.UUID
 
 class UserService {
@@ -36,7 +35,11 @@ class UserService {
             it[Users.role] = userRole.name
         }[Users.id].value
         
-        getUserById(id.toString())!!
+        val userRow = Users.select { Users.id eq id }
+            .singleOrNull()
+            ?: throw IllegalStateException("Failed to retrieve created user")
+        
+        rowToUser(userRow)
     }
     
     suspend fun getUserByEmail(email: String): UserResponse? = DatabaseFactory.dbQuery {
@@ -46,7 +49,7 @@ class UserService {
     }
     
     suspend fun getUserById(id: String): UserResponse? = DatabaseFactory.dbQuery {
-        Users.select { Users.id eq UUID.fromString(id) }
+        Users.selectAll().where { Users.id eq UUID.fromString(id) }
             .map { rowToUser(it) }
             .singleOrNull()
     }

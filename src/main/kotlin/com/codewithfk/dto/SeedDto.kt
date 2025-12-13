@@ -23,3 +23,4 @@ data class SeedInfoResponse(
     val sampleListings: List<String>
 )
 
+

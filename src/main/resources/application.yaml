@@ -20,8 +20,8 @@ storage:
 
   driverClassName: com.mysql.cj.jdbc.Driver
   jdbcURL: jdbc:mysql://localhost:3306/trevnor?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-  username: trevnor
-  password: your_password_here
+  username: root
+  password: root1234
   maximumPoolSize: 10
 
 jwt:

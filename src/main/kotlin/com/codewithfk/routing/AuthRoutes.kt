@@ -49,6 +49,7 @@ fun Route.authRoutes(userService: UserService) {
                 val token = JwtConfig.generateToken(user)
                 call.respond(HttpStatusCode.Created, AuthResponse(token = token, user = user))
             } catch (e: Exception) {
+                e.printStackTrace()
                 call.respond(HttpStatusCode.InternalServerError, ErrorResponse(e.message ?: "Registration failed"))
             }
         }
