@@ -2,8 +2,10 @@ package com.codewithfk.services
 
 import com.codewithfk.database.DatabaseFactory
 import com.codewithfk.dto.ListingResponse
+import com.codewithfk.dto.TripDateResponse
 import com.codewithfk.models.ListingCategory
 import com.codewithfk.models.TravelListings
+import com.codewithfk.models.TripDates
 import kotlinx.serialization.json.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -63,9 +65,35 @@ class ListingService {
     }
     
     suspend fun getListingById(id: String): ListingResponse? = DatabaseFactory.dbQuery {
-        TravelListings.select { TravelListings.id eq UUID.fromString(id) }
-            .map { rowToListing(it) }
+        val listing = TravelListings.select { TravelListings.id eq UUID.fromString(id) }
+            .map { rowToListing(it, id) }
             .singleOrNull()
+        listing
+    }
+    
+    private fun getTripDatesForListingInTransaction(listingId: String): List<TripDateResponse> {
+        return TripDates.select { 
+            (TripDates.listingId eq UUID.fromString(listingId)) and (TripDates.isActive eq true)
+        }
+        .orderBy(TripDates.startDate, SortOrder.ASC)
+        .map { row ->
+            val capacity = row[TripDates.maxCapacity] ?: 0
+            val booked = row[TripDates.currentBookings]
+            val available = if (capacity > 0) maxOf(0, capacity - booked) else null
+            
+            TripDateResponse(
+                id = row[TripDates.id].toString(),
+                listingId = row[TripDates.listingId].toString(),
+                startDate = row[TripDates.startDate].toString(),
+                endDate = row[TripDates.endDate].toString(),
+                maxCapacity = row[TripDates.maxCapacity],
+                currentBookings = row[TripDates.currentBookings],
+                availableSpots = available,
+                isActive = row[TripDates.isActive],
+                createdAt = row[TripDates.createdAt].toString(),
+                updatedAt = row[TripDates.updatedAt].toString()
+            )
+        }
     }
     
     suspend fun updateListing(
@@ -157,7 +185,7 @@ class ListingService {
         val listings = query
             .orderBy(TravelListings.createdAt, SortOrder.DESC)
             .limit(pageSize, offset = ((page - 1) * pageSize).toLong())
-            .map { rowToListing(it) }
+            .map { rowToListing(it, it[TravelListings.id].toString()) }
         
         Pair(listings, totalCount)
     }
@@ -167,14 +195,16 @@ class ListingService {
             TravelListings.select { TravelListings.vendorId eq UUID.fromString(vendorId) }
                 .orderBy(TravelListings.createdAt, SortOrder.DESC)
                 .limit(pageSize, offset = ((page - 1) * pageSize).toLong())
-                .map { rowToListing(it) }
+                .map { rowToListing(it, it[TravelListings.id].toString()) }
         }
     
     suspend fun deleteListing(id: String): Boolean = DatabaseFactory.dbQuery {
         TravelListings.deleteWhere { TravelListings.id eq UUID.fromString(id) } > 0
     }
     
-    private fun rowToListing(row: ResultRow): ListingResponse {
+    private fun rowToListing(row: ResultRow, listingId: String? = null): ListingResponse {
+        val id = listingId ?: row[TravelListings.id].toString()
+        val tripDates = getTripDatesForListingInTransaction(id)
         val imagesJson = row[TravelListings.images]
         val amenitiesJson = row[TravelListings.amenities]
         
@@ -210,6 +240,7 @@ class ListingService {
             availableTo = row[TravelListings.availableTo]?.toString(),
             images = images,
             amenities = amenities,
+            tripDates = if (tripDates.isNotEmpty()) tripDates else null,
             rating = row[TravelListings.rating].toDouble(),
             reviewCount = row[TravelListings.reviewCount],
             isActive = row[TravelListings.isActive],

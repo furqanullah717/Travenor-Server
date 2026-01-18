@@ -5,8 +5,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CreateBookingRequest(
     val listingId: String,
-    val checkInDate: String? = null,
-    val checkOutDate: String? = null,
+    val tripDateId: String? = null, // For predefined date trips
+    val checkInDate: String? = null, // For flexible date trips (backward compatibility)
+    val checkOutDate: String? = null, // For flexible date trips (backward compatibility)
     val numberOfGuests: Int = 1,
     val specialRequests: String? = null
 )
@@ -16,6 +17,7 @@ data class BookingResponse(
     val id: String,
     val customerId: String,
     val listingId: String,
+    val tripDateId: String?,
     val checkInDate: String?,
     val checkOutDate: String?,
     val numberOfGuests: Int,

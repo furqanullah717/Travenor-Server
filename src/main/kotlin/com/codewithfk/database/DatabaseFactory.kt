@@ -1,10 +1,12 @@
 package com.codewithfk.database
 
 import com.codewithfk.models.*
+import com.codewithfk.services.SeedDataService
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.config.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -29,13 +31,25 @@ object DatabaseFactory {
         )
         
         transaction(database) {
-            SchemaUtils.create(
+            SchemaUtils.createMissingTablesAndColumns(
                 Users,
                 TravelListings,
+                TripDates,
                 Bookings,
                 Reviews,
                 Categories
             )
+        }
+        
+        // Seed database after migration
+        runBlocking {
+            try {
+                val seedService = SeedDataService()
+                seedService.seedDatabase()
+            } catch (e: Exception) {
+                // Silently fail if seeding fails (e.g., data already exists)
+                println("Note: Database seeding skipped or completed already: ${e.message}")
+            }
         }
     }
     

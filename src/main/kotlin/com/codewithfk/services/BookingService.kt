@@ -132,6 +132,7 @@ class BookingService {
             id = row[Bookings.id].toString(),
             customerId = row[Bookings.customerId].toString(),
             listingId = row[Bookings.listingId].toString(),
+            tripDateId = row[Bookings.tripDateId]?.toString(),
             checkInDate = row[Bookings.checkInDate]?.toString(),
             checkOutDate = row[Bookings.checkOutDate]?.toString(),
             numberOfGuests = row[Bookings.numberOfGuests],

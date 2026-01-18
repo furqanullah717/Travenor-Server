@@ -31,12 +31,12 @@ data class AvailabilityCheckResponse(
 
 @Serializable
 data class PriceCalculationResponse(
-    val basePrice: Double,
-    val tax: Double,
+    val subtotal: Double,
+    val taxes: Double,
     val serviceFee: Double,
     val total: Double,
     val currency: String,
-    val nights: Int,
+    val numberOfNights: Int,
     val numberOfGuests: Int
 )
 

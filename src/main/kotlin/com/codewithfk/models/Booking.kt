@@ -5,13 +5,15 @@ import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import java.math.BigDecimal
 import kotlinx.datetime.Instant
 import kotlinx.datetime.Clock
+import org.jetbrains.exposed.sql.ReferenceOption
 import java.util.UUID
 
 object Bookings : UUIDTable("bookings") {
     val customerId = uuid("customer_id").references(Users.id)
     val listingId = uuid("listing_id").references(TravelListings.id)
-    val checkInDate = timestamp("check_in_date").nullable()
-    val checkOutDate = timestamp("check_out_date").nullable()
+    val tripDateId = uuid("trip_date_id").references(TripDates.id, onDelete = ReferenceOption.SET_NULL).nullable()
+    val checkInDate = timestamp("check_in_date").nullable() // For flexible date bookings (backward compatibility)
+    val checkOutDate = timestamp("check_out_date").nullable() // For flexible date bookings (backward compatibility)
     val numberOfGuests = integer("number_of_guests").default(1)
     val totalPrice = decimal("total_price", 10, 2)
     val currency = varchar("currency", 3).default("USD")

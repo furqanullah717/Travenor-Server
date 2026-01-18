@@ -55,6 +55,7 @@ data class ListingResponse(
     val availableTo: String?,
     val images: List<String>?,
     val amenities: List<String>?,
+    val tripDates: List<TripDateResponse>? = null, // Predefined dates for this listing
     val rating: Double,
     val reviewCount: Int,
     val isActive: Boolean,

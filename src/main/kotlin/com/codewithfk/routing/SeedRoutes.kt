@@ -57,7 +57,10 @@ fun Route.seedRoutes() {
                         "Round Trip to Paris (FLIGHT)",
                         "Safari Adventure - Serengeti (ACTIVITY)",
                         "Tokyo City Tour (ACTIVITY)",
-                        "Complete Bali Experience Package (PACKAGE)"
+                        "Complete Bali Experience Package (PACKAGE)",
+                        "Fairy Meadows Trek - Nanga Parbat Base Camp (ACTIVITY) - Predefined dates",
+                        "Summer Safari Adventure - Serengeti (ACTIVITY) - Predefined dates",
+                        "Swiss Alps Ski Package - Winter Season (PACKAGE) - Predefined dates"
                     )
                 )
             )

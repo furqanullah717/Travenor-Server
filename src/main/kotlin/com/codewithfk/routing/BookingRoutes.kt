@@ -42,12 +42,12 @@ fun Route.bookingRoutes(
                             numberOfGuests = request.numberOfGuests
                         )
                         PriceCalculationResponse(
-                            basePrice = calc.basePrice,
-                            tax = calc.tax,
+                            subtotal = calc.basePrice,
+                            taxes = calc.tax,
                             serviceFee = calc.serviceFee,
                             total = calc.total,
                             currency = calc.currency,
-                            nights = calc.nights,
+                            numberOfNights = calc.nights,
                             numberOfGuests = calc.numberOfGuests
                         )
                     } else null
