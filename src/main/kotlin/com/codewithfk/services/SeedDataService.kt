@@ -120,7 +120,7 @@ class SeedDataService {
     
     private suspend fun seedListings(adminId: UUID, vendor1Id: UUID, vendor2Id: UUID) {
         // Hotel listings
-        createListing(
+        val maldivesResortId = createListing(
             vendorId = vendor1Id,
             title = "Luxury Beach Resort - Maldives",
             description = "Experience paradise at our 5-star beach resort with private villas, world-class dining, and pristine beaches.",
@@ -139,8 +139,13 @@ class SeedDataService {
             ),
             amenities = listOf("WiFi", "Pool", "Spa", "Beach Access", "Restaurant", "Bar")
         )
+        maldivesResortId?.let { listingId ->
+            createTripDate(listingId, Instant.parse("2026-02-10T00:00:00Z"), Instant.parse("2026-02-15T23:59:59Z"), 4)
+            createTripDate(listingId, Instant.parse("2026-03-01T00:00:00Z"), Instant.parse("2026-03-06T23:59:59Z"), 4)
+            createTripDate(listingId, Instant.parse("2026-04-15T00:00:00Z"), Instant.parse("2026-04-20T23:59:59Z"), 4)
+        }
         
-        createListing(
+        val swissHotelId = createListing(
             vendorId = vendor1Id,
             title = "Mountain View Hotel - Swiss Alps",
             description = "Cozy alpine hotel with stunning mountain views, perfect for skiing and hiking enthusiasts.",
@@ -158,9 +163,14 @@ class SeedDataService {
             ),
             amenities = listOf("WiFi", "Ski Storage", "Restaurant", "Fireplace", "Mountain View")
         )
+        swissHotelId?.let { listingId ->
+            createTripDate(listingId, Instant.parse("2026-02-01T00:00:00Z"), Instant.parse("2026-02-05T23:59:59Z"), 2)
+            createTripDate(listingId, Instant.parse("2026-02-20T00:00:00Z"), Instant.parse("2026-02-24T23:59:59Z"), 2)
+            createTripDate(listingId, Instant.parse("2026-03-10T00:00:00Z"), Instant.parse("2026-03-14T23:59:59Z"), 2)
+        }
         
         // Flight listings
-        createListing(
+        val parisFlightId = createListing(
             vendorId = vendor2Id,
             title = "Round Trip to Paris",
             description = "Economy class round trip flight from New York to Paris with flexible dates.",
@@ -170,7 +180,7 @@ class SeedDataService {
             country = "France",
             price = BigDecimal("899.99"),
             currency = "USD",
-            capacity = null,
+            capacity = 50,
             availableFrom = Clock.System.now(),
             availableTo = null,
             images = listOf(
@@ -178,9 +188,14 @@ class SeedDataService {
             ),
             amenities = listOf("Meal Included", "Entertainment", "WiFi", "Seat Selection")
         )
+        parisFlightId?.let { listingId ->
+            createTripDate(listingId, Instant.parse("2026-02-14T08:00:00Z"), Instant.parse("2026-02-21T22:00:00Z"), 50)
+            createTripDate(listingId, Instant.parse("2026-03-05T08:00:00Z"), Instant.parse("2026-03-12T22:00:00Z"), 50)
+            createTripDate(listingId, Instant.parse("2026-04-01T08:00:00Z"), Instant.parse("2026-04-08T22:00:00Z"), 50)
+        }
         
         // Activity listings
-        createListing(
+        val safariId1 = createListing(
             vendorId = vendor2Id,
             title = "Safari Adventure - Serengeti",
             description = "3-day guided safari tour through Serengeti National Park with professional guides and luxury camping.",
@@ -198,8 +213,13 @@ class SeedDataService {
             ),
             amenities = listOf("Guide", "Transportation", "Meals", "Camping Equipment", "Wildlife Viewing")
         )
+        safariId1?.let { listingId ->
+            createTripDate(listingId, Instant.parse("2026-02-15T00:00:00Z"), Instant.parse("2026-02-17T23:59:59Z"), 6)
+            createTripDate(listingId, Instant.parse("2026-03-10T00:00:00Z"), Instant.parse("2026-03-12T23:59:59Z"), 6)
+            createTripDate(listingId, Instant.parse("2026-04-05T00:00:00Z"), Instant.parse("2026-04-07T23:59:59Z"), 6)
+        }
         
-        createListing(
+        val tokyoTourId = createListing(
             vendorId = vendor1Id,
             title = "Tokyo City Tour",
             description = "Full-day guided tour of Tokyo's most famous landmarks including temples, markets, and modern districts.",
@@ -217,9 +237,15 @@ class SeedDataService {
             ),
             amenities = listOf("Guide", "Transportation", "Entry Fees", "Lunch")
         )
+        tokyoTourId?.let { listingId ->
+            createTripDate(listingId, Instant.parse("2026-02-08T09:00:00Z"), Instant.parse("2026-02-08T18:00:00Z"), 20)
+            createTripDate(listingId, Instant.parse("2026-02-15T09:00:00Z"), Instant.parse("2026-02-15T18:00:00Z"), 20)
+            createTripDate(listingId, Instant.parse("2026-02-22T09:00:00Z"), Instant.parse("2026-02-22T18:00:00Z"), 20)
+            createTripDate(listingId, Instant.parse("2026-03-01T09:00:00Z"), Instant.parse("2026-03-01T18:00:00Z"), 20)
+        }
         
         // Package listing
-        createListing(
+        val baliPackageId = createListing(
             vendorId = adminId,
             title = "Complete Bali Experience Package",
             description = "7-day all-inclusive package: flights, hotel, tours, and meals. The perfect Bali getaway!",
@@ -237,6 +263,11 @@ class SeedDataService {
             ),
             amenities = listOf("Flights", "Hotel", "Tours", "Meals", "Airport Transfer", "Travel Insurance")
         )
+        baliPackageId?.let { listingId ->
+            createTripDate(listingId, Instant.parse("2026-03-01T00:00:00Z"), Instant.parse("2026-03-07T23:59:59Z"), 2)
+            createTripDate(listingId, Instant.parse("2026-04-10T00:00:00Z"), Instant.parse("2026-04-16T23:59:59Z"), 2)
+            createTripDate(listingId, Instant.parse("2026-05-15T00:00:00Z"), Instant.parse("2026-05-21T23:59:59Z"), 2)
+        }
         
         // Fairy Meadows Trek - Predefined dates trip
         val fairyMeadowsId = createListing(

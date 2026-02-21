@@ -17,44 +17,48 @@ class BookingService {
     suspend fun createBooking(
         customerId: String,
         listingId: String,
+        tripDateId: String? = null,
         checkInDate: String?,
         checkOutDate: String?,
         numberOfGuests: Int,
         specialRequests: String?,
-        totalPrice: BigDecimal? = null // If provided, use this; otherwise calculate
-    ): BookingResponse = DatabaseFactory.dbQuery {
-        // Get listing price
-        val listing = TravelListings.select { TravelListings.id eq UUID.fromString(listingId) }.singleOrNull()
-            ?: throw IllegalArgumentException("Listing not found")
-        
-        val calculatedPrice = totalPrice ?: run {
-            val basePrice = listing[TravelListings.price]
-            // For hotels, calculate based on nights
-            val checkIn = checkInDate?.let { Instant.parse(it) }
-            val checkOut = checkOutDate?.let { Instant.parse(it) }
+        totalPrice: BigDecimal? = null
+    ): BookingResponse {
+        val bookingId = DatabaseFactory.dbQuery {
+            val listing = TravelListings.select { TravelListings.id eq UUID.fromString(listingId) }.singleOrNull()
+                ?: throw IllegalArgumentException("Listing not found")
             
-            if (checkIn != null && checkOut != null && listing[TravelListings.category] == "HOTEL") {
-                val nights = ((checkOut.toEpochMilliseconds() - checkIn.toEpochMilliseconds()) / (1000 * 60 * 60 * 24)).toInt()
-                basePrice.multiply(BigDecimal.valueOf(nights.toLong())).multiply(BigDecimal.valueOf(numberOfGuests.toLong()))
-            } else {
-                basePrice.multiply(BigDecimal.valueOf(numberOfGuests.toLong()))
+            val calculatedPrice = totalPrice ?: run {
+                val basePrice = listing[TravelListings.price]
+                val checkIn = checkInDate?.let { Instant.parse(it) }
+                val checkOut = checkOutDate?.let { Instant.parse(it) }
+                
+                if (checkIn != null && checkOut != null && listing[TravelListings.category] == "HOTEL") {
+                    val nights = ((checkOut.toEpochMilliseconds() - checkIn.toEpochMilliseconds()) / (1000 * 60 * 60 * 24)).toInt()
+                    basePrice.multiply(BigDecimal.valueOf(nights.toLong())).multiply(BigDecimal.valueOf(numberOfGuests.toLong()))
+                } else {
+                    basePrice.multiply(BigDecimal.valueOf(numberOfGuests.toLong()))
+                }
             }
+            
+            val currency = listing[TravelListings.currency]
+            
+            Bookings.insert { row ->
+                row[Bookings.customerId] = UUID.fromString(customerId)
+                row[Bookings.listingId] = UUID.fromString(listingId)
+                row[Bookings.tripDateId] = tripDateId?.let { id -> UUID.fromString(id) }
+                row[Bookings.checkInDate] = checkInDate?.let { date -> Instant.parse(date) }
+                row[Bookings.checkOutDate] = checkOutDate?.let { date -> Instant.parse(date) }
+                row[Bookings.numberOfGuests] = numberOfGuests
+                row[Bookings.totalPrice] = calculatedPrice
+                row[Bookings.currency] = currency
+                row[Bookings.status] = BookingStatus.PENDING.name
+                row[Bookings.paymentStatus] = PaymentStatus.PENDING.name
+                row[Bookings.specialRequests] = specialRequests
+            }[Bookings.id].value.toString()
         }
         
-        val id = Bookings.insert {
-            it[Bookings.customerId] = UUID.fromString(customerId)
-            it[Bookings.listingId] = UUID.fromString(listingId)
-            it[Bookings.checkInDate] = checkInDate?.let { Instant.parse(it) }
-            it[Bookings.checkOutDate] = checkOutDate?.let { Instant.parse(it) }
-            it[Bookings.numberOfGuests] = numberOfGuests
-            it[Bookings.totalPrice] = calculatedPrice
-            it[Bookings.currency] = listing[TravelListings.currency]
-            it[Bookings.status] = BookingStatus.PENDING.name
-            it[Bookings.paymentStatus] = PaymentStatus.PENDING.name
-            it[Bookings.specialRequests] = specialRequests
-        }[Bookings.id].value
-        
-        getBookingById(id.toString())!!
+        return getBookingById(bookingId) ?: throw IllegalStateException("Failed to retrieve created booking")
     }
     
     suspend fun getBookingById(id: String): BookingResponse? = DatabaseFactory.dbQuery {

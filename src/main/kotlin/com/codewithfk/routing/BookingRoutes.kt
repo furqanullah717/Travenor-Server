@@ -6,6 +6,7 @@ import com.codewithfk.dto.AvailabilityCheckResponse
 import com.codewithfk.dto.PriceCalculationResponse
 import com.codewithfk.services.BookingService
 import com.codewithfk.services.BookingAvailabilityService
+import com.codewithfk.services.NotificationService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -16,7 +17,8 @@ import io.ktor.server.routing.*
 
 fun Route.bookingRoutes(
     bookingService: BookingService,
-    availabilityService: BookingAvailabilityService
+    availabilityService: BookingAvailabilityService,
+    notificationService: NotificationService
 ) {
     route("/bookings") {
         authenticate("auth-jwt") {
@@ -24,8 +26,25 @@ fun Route.bookingRoutes(
             post("/check-availability") {
                 try {
                     val request = call.receive<CreateBookingRequest>()
-                    val checkIn = request.checkInDate?.let { kotlinx.datetime.Instant.parse(it) }
-                    val checkOut = request.checkOutDate?.let { kotlinx.datetime.Instant.parse(it) }
+                    println("Check availability: listingId=${request.listingId}, checkIn=${request.checkInDate}, checkOut=${request.checkOutDate}, guests=${request.numberOfGuests}")
+                    
+                    // Parse dates - handle both ISO instant format
+                    val checkIn = request.checkInDate?.let { dateStr ->
+                        try {
+                            kotlinx.datetime.Instant.parse(dateStr)
+                        } catch (e: Exception) {
+                            println("Failed to parse checkInDate: $dateStr - ${e.message}")
+                            null
+                        }
+                    }
+                    val checkOut = request.checkOutDate?.let { dateStr ->
+                        try {
+                            kotlinx.datetime.Instant.parse(dateStr)
+                        } catch (e: Exception) {
+                            println("Failed to parse checkOutDate: $dateStr - ${e.message}")
+                            null
+                        }
+                    }
                     
                     val availability = availabilityService.checkAvailability(
                         listingId = request.listingId,
@@ -60,7 +79,8 @@ fun Route.bookingRoutes(
                         )
                     )
                 } catch (e: Exception) {
-                    call.respond(HttpStatusCode.BadRequest, ErrorResponse(e.message ?: "Bad request"))
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("Availability check failed: ${e.message}"))
                 }
             }
             
@@ -75,10 +95,25 @@ fun Route.bookingRoutes(
                 
                 try {
                     val request = call.receive<CreateBookingRequest>()
+                    println("Booking request: listingId=${request.listingId}, tripDateId=${request.tripDateId}, checkIn=${request.checkInDate}, checkOut=${request.checkOutDate}, guests=${request.numberOfGuests}")
                     
-                    // Check availability first
-                    val checkIn = request.checkInDate?.let { kotlinx.datetime.Instant.parse(it) }
-                    val checkOut = request.checkOutDate?.let { kotlinx.datetime.Instant.parse(it) }
+                    // Parse dates - handle both ISO instant format and date-only format
+                    val checkIn = request.checkInDate?.let { dateStr ->
+                        try {
+                            kotlinx.datetime.Instant.parse(dateStr)
+                        } catch (e: Exception) {
+                            println("Failed to parse checkInDate: $dateStr - ${e.message}")
+                            null
+                        }
+                    }
+                    val checkOut = request.checkOutDate?.let { dateStr ->
+                        try {
+                            kotlinx.datetime.Instant.parse(dateStr)
+                        } catch (e: Exception) {
+                            println("Failed to parse checkOutDate: $dateStr - ${e.message}")
+                            null
+                        }
+                    }
                     
                     val availability = availabilityService.checkAvailability(
                         listingId = request.listingId,
@@ -88,14 +123,10 @@ fun Route.bookingRoutes(
                     )
                     
                     if (!availability.available) {
-                        call.respond(HttpStatusCode.BadRequest, mapOf(
-                            "error" to "Booking not available",
-                            "reason" to availability.reason
-                        ))
+                        call.respond(HttpStatusCode.BadRequest, ErrorResponse("Booking not available: ${availability.reason}"))
                         return@post
                     }
                     
-                    // Calculate price
                     val priceCalculation = availabilityService.calculatePrice(
                         listingId = request.listingId,
                         checkInDate = checkIn,
@@ -106,6 +137,7 @@ fun Route.bookingRoutes(
                     val booking = bookingService.createBooking(
                         customerId = userId,
                         listingId = request.listingId,
+                        tripDateId = request.tripDateId,
                         checkInDate = request.checkInDate,
                         checkOutDate = request.checkOutDate,
                         numberOfGuests = request.numberOfGuests,
@@ -115,7 +147,8 @@ fun Route.bookingRoutes(
                     
                     call.respond(HttpStatusCode.Created, booking)
                 } catch (e: Exception) {
-                    call.respond(HttpStatusCode.BadRequest, ErrorResponse(e.message ?: "Bad request"))
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("Booking failed: ${e.message}"))
                 }
             }
             
@@ -198,6 +231,10 @@ fun Route.bookingRoutes(
                     if (updatedBooking == null) {
                         call.respond(HttpStatusCode.NotFound)
                         return@put
+                    }
+                    
+                    if (updatedBooking.status == "COMPLETED") {
+                        notificationService.sendRatingPrompt(updatedBooking)
                     }
                     
                     call.respond(updatedBooking)

@@ -37,7 +37,9 @@ object DatabaseFactory {
                 TripDates,
                 Bookings,
                 Reviews,
-                Categories
+                Categories,
+                DeviceTokens,
+                Notifications
             )
         }
         

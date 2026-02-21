@@ -82,6 +82,12 @@
           "availableTo": { "type": "string", "format": "date-time", "nullable": true },
           "images": { "type": "array", "items": { "type": "string" }, "nullable": true },
           "amenities": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "tripDates": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TripDateResponse" },
+            "nullable": true,
+            "description": "Predefined trip dates for this listing"
+          },
           "rating": { "type": "number", "format": "double" },
           "reviewCount": { "type": "integer" },
           "isActive": { "type": "boolean" },
@@ -108,12 +114,47 @@
           "amenities": { "type": "array", "items": { "type": "string" }, "nullable": true }
         }
       },
+      "UpdateListingRequest": {
+        "type": "object",
+        "description": "All fields are optional for partial updates",
+        "properties": {
+          "title": { "type": "string", "nullable": true },
+          "description": { "type": "string", "nullable": true },
+          "location": { "type": "string", "nullable": true },
+          "city": { "type": "string", "nullable": true },
+          "country": { "type": "string", "nullable": true },
+          "price": { "type": "number", "format": "double", "nullable": true },
+          "currency": { "type": "string", "nullable": true },
+          "capacity": { "type": "integer", "nullable": true },
+          "availableFrom": { "type": "string", "format": "date-time", "nullable": true },
+          "availableTo": { "type": "string", "format": "date-time", "nullable": true },
+          "images": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "amenities": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "isActive": { "type": "boolean", "nullable": true }
+        }
+      },
+      "TripDateResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "listingId": { "type": "string", "format": "uuid" },
+          "startDate": { "type": "string", "format": "date-time" },
+          "endDate": { "type": "string", "format": "date-time" },
+          "maxCapacity": { "type": "integer", "nullable": true },
+          "currentBookings": { "type": "integer" },
+          "availableSpots": { "type": "integer", "nullable": true },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
       "BookingResponse": {
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "customerId": { "type": "string", "format": "uuid" },
           "listingId": { "type": "string", "format": "uuid" },
+          "tripDateId": { "type": "string", "format": "uuid", "nullable": true, "description": "ID of the predefined trip date, if applicable" },
           "checkInDate": { "type": "string", "format": "date-time", "nullable": true },
           "checkOutDate": { "type": "string", "format": "date-time", "nullable": true },
           "numberOfGuests": { "type": "integer", "default": 1 },
@@ -132,10 +173,46 @@
         "required": ["listingId"],
         "properties": {
           "listingId": { "type": "string", "format": "uuid" },
-          "checkInDate": { "type": "string", "format": "date-time", "nullable": true },
-          "checkOutDate": { "type": "string", "format": "date-time", "nullable": true },
+          "tripDateId": { "type": "string", "format": "uuid", "nullable": true, "description": "For predefined date trips" },
+          "checkInDate": { "type": "string", "format": "date-time", "nullable": true, "description": "For flexible date trips (ISO 8601 instant)" },
+          "checkOutDate": { "type": "string", "format": "date-time", "nullable": true, "description": "For flexible date trips (ISO 8601 instant)" },
           "numberOfGuests": { "type": "integer", "default": 1 },
           "specialRequests": { "type": "string", "nullable": true }
+        }
+      },
+      "AvailabilityCheckResponse": {
+        "type": "object",
+        "properties": {
+          "available": { "type": "boolean" },
+          "reason": { "type": "string", "nullable": true, "description": "Reason when not available" },
+          "priceCalculation": { "$ref": "#/components/schemas/PriceCalculationResponse" }
+        }
+      },
+      "PriceCalculationResponse": {
+        "type": "object",
+        "properties": {
+          "subtotal": { "type": "number", "format": "double", "description": "Base price (guests x nights x price)" },
+          "taxes": { "type": "number", "format": "double", "description": "Tax amount (10%)" },
+          "serviceFee": { "type": "number", "format": "double", "description": "Service fee (5%)" },
+          "total": { "type": "number", "format": "double", "description": "Total = subtotal + taxes + serviceFee" },
+          "currency": { "type": "string" },
+          "numberOfNights": { "type": "integer" },
+          "numberOfGuests": { "type": "integer" }
+        }
+      },
+      "UpdateBookingStatusRequest": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string", "enum": ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"] }
+        }
+      },
+      "UpdatePaymentStatusRequest": {
+        "type": "object",
+        "required": ["paymentStatus"],
+        "properties": {
+          "paymentStatus": { "type": "string", "enum": ["PENDING", "PAID", "REFUNDED"] },
+          "paymentId": { "type": "string", "nullable": true, "description": "External payment ID (e.g. Stripe payment intent ID)" }
         }
       },
       "ReviewResponse": {
@@ -164,6 +241,127 @@
           "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
           "title": { "type": "string", "nullable": true },
           "comment": { "type": "string", "nullable": true }
+        }
+      },
+      "UpdateReviewRequest": {
+        "type": "object",
+        "description": "All fields are optional for partial updates",
+        "properties": {
+          "rating": { "type": "string", "nullable": true, "description": "Rating as string, parsed to integer (1-5)" },
+          "title": { "type": "string", "nullable": true },
+          "comment": { "type": "string", "nullable": true }
+        }
+      },
+      "CreatePaymentIntentRequest": {
+        "type": "object",
+        "required": ["bookingId"],
+        "properties": {
+          "bookingId": { "type": "string", "format": "uuid" },
+          "amount": { "type": "integer", "format": "int64", "nullable": true, "description": "Amount in major currency units (e.g. dollars). If null, uses booking total." },
+          "currency": { "type": "string", "default": "usd" }
+        }
+      },
+      "PaymentIntentResponse": {
+        "type": "object",
+        "properties": {
+          "clientSecret": { "type": "string" },
+          "paymentIntentId": { "type": "string" },
+          "amount": { "type": "integer", "format": "int64", "description": "Amount in cents" },
+          "currency": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      },
+      "PaymentIntentStatusResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string" },
+          "amount": { "type": "integer", "format": "int64" },
+          "currency": { "type": "string" }
+        }
+      },
+      "RefundRequest": {
+        "type": "object",
+        "required": ["bookingId"],
+        "properties": {
+          "bookingId": { "type": "string", "format": "uuid" },
+          "amount": { "type": "integer", "format": "int64", "nullable": true, "description": "Amount in major units. If null, full refund." },
+          "reason": { "type": "string", "nullable": true, "description": "One of: duplicate, fraudulent, requested_by_customer" }
+        }
+      },
+      "RefundResponse": {
+        "type": "object",
+        "properties": {
+          "refundId": { "type": "string" },
+          "amount": { "type": "integer", "format": "int64" },
+          "currency": { "type": "string" },
+          "status": { "type": "string" },
+          "reason": { "type": "string", "nullable": true }
+        }
+      },
+      "ImageInfo": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string" },
+          "fileName": { "type": "string" },
+          "size": { "type": "integer", "format": "int64" },
+          "contentType": { "type": "string", "nullable": true }
+        }
+      },
+      "ImageUploadResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "images": { "type": "array", "items": { "$ref": "#/components/schemas/ImageInfo" } }
+        }
+      },
+      "SingleImageUploadResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "image": { "$ref": "#/components/schemas/ImageInfo" }
+        }
+      },
+      "ImagesListResponse": {
+        "type": "object",
+        "properties": {
+          "images": { "type": "array", "items": { "type": "string" }, "description": "List of image URLs" }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        }
+      },
+      "WebhookResponse": {
+        "type": "object",
+        "properties": {
+          "received": { "type": "boolean" }
+        }
+      },
+      "TestUserInfo": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string" },
+          "password": { "type": "string" },
+          "role": { "type": "string", "nullable": true }
+        }
+      },
+      "SeedResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "testUsers": { "type": "object", "additionalProperties": { "$ref": "#/components/schemas/TestUserInfo" } },
+          "note": { "type": "string", "nullable": true }
+        }
+      },
+      "SeedInfoResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "testUsers": { "type": "object", "additionalProperties": { "$ref": "#/components/schemas/TestUserInfo" } },
+          "sampleListings": { "type": "array", "items": { "type": "string" } }
         }
       },
       "Error": {
@@ -197,7 +395,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Invalid email format or password too short",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -205,7 +403,7 @@
             }
           },
           "409": {
-            "description": "User already exists",
+            "description": "User with this email already exists",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -237,7 +435,7 @@
             }
           },
           "401": {
-            "description": "Invalid credentials",
+            "description": "Invalid credentials or inactive account",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -250,7 +448,7 @@
     "/auth/me": {
       "get": {
         "tags": ["Authentication"],
-        "summary": "Get current user",
+        "summary": "Get current authenticated user",
         "security": [{ "bearerAuth": [] }],
         "responses": {
           "200": {
@@ -261,7 +459,8 @@
               }
             }
           },
-          "401": { "description": "Unauthorized" }
+          "401": { "description": "Invalid token" },
+          "404": { "description": "User not found" }
         }
       }
     },
@@ -279,7 +478,8 @@
               }
             }
           },
-          "401": { "description": "Unauthorized" }
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "User not found" }
         }
       },
       "put": {
@@ -292,9 +492,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "firstName": { "type": "string" },
-                  "lastName": { "type": "string" },
-                  "phone": { "type": "string" }
+                  "firstName": { "type": "string", "nullable": true },
+                  "lastName": { "type": "string", "nullable": true },
+                  "phone": { "type": "string", "nullable": true }
                 }
               }
             }
@@ -309,7 +509,66 @@
               }
             }
           },
-          "401": { "description": "Unauthorized" }
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserResponse" }
+              }
+            }
+          },
+          "400": { "description": "Missing or invalid user ID" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List all users (ADMIN only)",
+        "description": "Returns a paginated list of all users. Requires ADMIN role.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UserResponse" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - ADMIN role required" }
         }
       }
     },
@@ -331,7 +590,7 @@
         ],
         "responses": {
           "200": {
-            "description": "List of listings",
+            "description": "Paginated list of listings matching filters",
             "content": {
               "application/json": {
                 "schema": {
@@ -373,6 +632,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
           "401": { "description": "Unauthorized" },
           "403": { "description": "Forbidden - VENDOR or ADMIN role required" }
         }
@@ -382,6 +649,7 @@
       "get": {
         "tags": ["Listings"],
         "summary": "Get listing by ID",
+        "description": "Public endpoint to get listing details including trip dates",
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
@@ -394,17 +662,26 @@
               }
             }
           },
+          "400": { "description": "Missing or invalid listing ID" },
           "404": { "description": "Listing not found" }
         }
       },
       "put": {
         "tags": ["Listings"],
         "summary": "Update listing",
-        "description": "Only listing owner or ADMIN can update",
+        "description": "Only listing owner or ADMIN can update. All fields are optional for partial updates.",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateListingRequest" }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Listing updated",
@@ -414,8 +691,16 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
           "401": { "description": "Unauthorized" },
-          "403": { "description": "Forbidden" },
+          "403": { "description": "Forbidden - not the listing owner" },
           "404": { "description": "Listing not found" }
         }
       },
@@ -430,8 +715,69 @@
         "responses": {
           "204": { "description": "Listing deleted" },
           "401": { "description": "Unauthorized" },
-          "403": { "description": "Forbidden" },
+          "403": { "description": "Forbidden - not the listing owner" },
           "404": { "description": "Listing not found" }
+        }
+      }
+    },
+    "/listings/vendor/my-listings": {
+      "get": {
+        "tags": ["Listings"],
+        "summary": "Get current vendor's listings",
+        "description": "Returns a paginated list of listings owned by the authenticated vendor.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of vendor's listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ListingResponse" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/bookings/check-availability": {
+      "post": {
+        "tags": ["Bookings"],
+        "summary": "Check availability and calculate price",
+        "description": "Checks whether the listing is available for the given dates/guests and returns a price breakdown if available.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateBookingRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Availability check result with price calculation when available",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AvailabilityCheckResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Availability check failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
         }
       }
     },
@@ -439,6 +785,7 @@
       "post": {
         "tags": ["Bookings"],
         "summary": "Create a new booking",
+        "description": "Creates a booking after verifying availability and calculating the price. The total price is computed server-side based on listing price, number of guests, number of nights, taxes (10%), and service fee (5%).",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -458,7 +805,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Booking not available or invalid request",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -470,11 +817,12 @@
       },
       "get": {
         "tags": ["Bookings"],
-        "summary": "Get user's bookings",
+        "summary": "Get authenticated user's bookings",
+        "description": "Returns a paginated list of bookings for the currently authenticated user, ordered by creation date descending.",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
-          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 }, "description": "Page number (1-indexed)" },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 }, "description": "Number of results per page" }
         ],
         "responses": {
           "200": {
@@ -496,6 +844,7 @@
       "get": {
         "tags": ["Bookings"],
         "summary": "Get booking by ID",
+        "description": "Returns booking details. Customers can only access their own bookings; ADMIN and VENDOR roles can access any booking.",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
@@ -509,24 +858,106 @@
               }
             }
           },
+          "400": { "description": "Missing or invalid booking ID" },
           "401": { "description": "Unauthorized" },
-          "403": { "description": "Forbidden" },
+          "403": { "description": "Forbidden - booking belongs to another user" },
           "404": { "description": "Booking not found" }
         }
       },
       "delete": {
         "tags": ["Bookings"],
         "summary": "Cancel booking",
+        "description": "Cancels a booking owned by the authenticated user. Sets the booking status to CANCELLED. Returns 404 if the booking doesn't exist or doesn't belong to the user.",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
         ],
         "responses": {
           "200": {
-            "description": "Booking cancelled",
+            "description": "Booking cancelled successfully",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/BookingResponse" }
+              }
+            }
+          },
+          "400": { "description": "Missing or invalid booking ID" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Booking not found or not owned by user" }
+        }
+      }
+    },
+    "/bookings/{id}/status": {
+      "put": {
+        "tags": ["Bookings"],
+        "summary": "Update booking status",
+        "description": "Updates the status of a booking. Only ADMIN and VENDOR roles are authorized.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateBookingStatusRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking status updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BookingResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - ADMIN or VENDOR role required" },
+          "404": { "description": "Booking not found" }
+        }
+      }
+    },
+    "/bookings/{id}/payment": {
+      "put": {
+        "tags": ["Bookings"],
+        "summary": "Update booking payment status",
+        "description": "Updates the payment status and optionally the payment ID of a booking.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdatePaymentStatusRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment status updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BookingResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or missing paymentStatus",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
               }
             }
           },
@@ -558,7 +989,7 @@
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Invalid request",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Error" }
@@ -573,6 +1004,7 @@
       "get": {
         "tags": ["Reviews"],
         "summary": "Get reviews for a listing",
+        "description": "Public endpoint returning paginated reviews for a specific listing.",
         "parameters": [
           { "name": "listingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
@@ -589,11 +1021,472 @@
                 }
               }
             }
+          },
+          "400": { "description": "Missing or invalid listing ID" }
+        }
+      }
+    },
+    "/reviews/my-reviews": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Get current user's reviews",
+        "description": "Returns a paginated list of reviews written by the authenticated user.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user's reviews",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReviewResponse" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/reviews/{id}": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "Get review by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReviewResponse" }
+              }
+            }
+          },
+          "400": { "description": "Missing or invalid review ID" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Review not found" }
+        }
+      },
+      "put": {
+        "tags": ["Reviews"],
+        "summary": "Update review",
+        "description": "Only the review author can update their review. All fields are optional.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateReviewRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Review updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReviewResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - not the review author" },
+          "404": { "description": "Review not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Reviews"],
+        "summary": "Delete review",
+        "description": "Only the review author or ADMIN can delete a review.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Review deleted" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - not the review author or admin" },
+          "404": { "description": "Review not found" }
+        }
+      }
+    },
+    "/reviews/{id}/approve": {
+      "put": {
+        "tags": ["Reviews"],
+        "summary": "Approve a review (ADMIN only)",
+        "description": "Marks a review as approved. Only ADMIN role is authorized.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review approved",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReviewResponse" }
+              }
+            }
+          },
+          "400": { "description": "Missing or invalid review ID" },
+          "403": { "description": "Forbidden - ADMIN role required" },
+          "404": { "description": "Review not found" }
+        }
+      }
+    },
+    "/payments/intent": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Create a payment intent",
+        "description": "Creates a Stripe payment intent for a booking. The amount is converted to cents. If amount is not provided, the booking total is used.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePaymentIntentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment intent created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaymentIntentResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to create payment intent",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - booking does not belong to user" }
+        }
+      }
+    },
+    "/payments/intent/{paymentIntentId}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Get payment intent status",
+        "description": "Retrieves the current status of a Stripe payment intent. Only the booking owner can access it.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "paymentIntentId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment intent status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaymentIntentStatusResponse" }
+              }
+            }
+          },
+          "400": { "description": "Missing payment intent ID" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - booking does not belong to user" },
+          "404": { "description": "Payment intent not found" }
+        }
+      }
+    },
+    "/payments/refund": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Process a refund",
+        "description": "Processes a refund for a booking. Only the booking owner or ADMIN can request a refund. If amount is null, a full refund is issued.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefundRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Refund processed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RefundResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Failed to process refund",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - not authorized to refund this booking" }
+        }
+      }
+    },
+    "/uploads/{subdirectory}/{filename}": {
+      "get": {
+        "tags": ["Images"],
+        "summary": "Serve an uploaded image",
+        "description": "Public endpoint to serve uploaded image files. Only listings, users, and general subdirectories are allowed.",
+        "parameters": [
+          { "name": "subdirectory", "in": "path", "required": true, "schema": { "type": "string", "enum": ["listings", "users", "general"] } },
+          { "name": "filename", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image file",
+            "content": {
+              "image/jpeg": { "schema": { "type": "string", "format": "binary" } },
+              "image/png": { "schema": { "type": "string", "format": "binary" } },
+              "image/webp": { "schema": { "type": "string", "format": "binary" } },
+              "image/gif": { "schema": { "type": "string", "format": "binary" } }
+            }
+          },
+          "400": { "description": "Missing parameters" },
+          "403": { "description": "Forbidden subdirectory" },
+          "404": { "description": "File not found" }
+        }
+      }
+    },
+    "/images/listings/{listingId}": {
+      "post": {
+        "tags": ["Images"],
+        "summary": "Upload images for a listing",
+        "description": "Upload one or more images for a listing. Only the listing owner or ADMIN can upload. Accepts multipart/form-data.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "listingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (JPEG, PNG, WebP, GIF)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Images uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImageUploadResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "No image files provided or validation failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - not the listing owner" },
+          "404": { "description": "Listing not found" }
+        }
+      },
+      "get": {
+        "tags": ["Images"],
+        "summary": "Get listing images",
+        "description": "Returns a list of image URLs for a listing.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "listingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of image URLs",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImagesListResponse" }
+              }
+            }
+          },
+          "400": { "description": "Missing or invalid listing ID" },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["Images"],
+        "summary": "Delete a listing image",
+        "description": "Deletes an image from a listing. Only the listing owner or ADMIN can delete. Pass the image URL as a query parameter.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "listingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "url", "in": "query", "required": true, "schema": { "type": "string" }, "description": "URL of the image to delete" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageResponse" }
+              }
+            }
+          },
+          "400": { "description": "Missing image URL" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden - not the listing owner" },
+          "404": { "description": "Listing or image not found" }
+        }
+      }
+    },
+    "/images/users/profile": {
+      "post": {
+        "tags": ["Images"],
+        "summary": "Upload user profile image",
+        "description": "Upload a profile image for the authenticated user. Accepts multipart/form-data with a single image file.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (JPEG, PNG, WebP, GIF)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Profile image uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SingleImageUploadResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "No image file provided or validation failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/webhooks/stripe": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Stripe webhook handler",
+        "description": "Receives and processes Stripe webhook events. Validates the Stripe-Signature header. Handles payment_intent.succeeded (marks booking as PAID and CONFIRMED), payment_intent.payment_failed, and charge.refunded events.",
+        "parameters": [
+          { "name": "Stripe-Signature", "in": "header", "required": true, "schema": { "type": "string" }, "description": "Stripe webhook signature for verification" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "string", "description": "Raw Stripe event payload" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook received",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WebhookResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid signature",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/seed": {
+      "post": {
+        "tags": ["Seed"],
+        "summary": "Seed the database",
+        "description": "Populates the database with sample data including test users, listings, and trip dates. Useful for development and testing.",
+        "responses": {
+          "200": {
+            "description": "Database seeded successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SeedResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to seed database",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Seed"],
+        "summary": "Get seed data info",
+        "description": "Returns information about available test users and sample listings that can be seeded.",
+        "responses": {
+          "200": {
+            "description": "Seed data information",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SeedInfoResponse" }
+              }
+            }
           }
         }
       }
     }
   }
 }
-
-

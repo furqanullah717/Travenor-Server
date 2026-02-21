@@ -59,6 +59,9 @@ dependencies {
     // Stripe
     implementation(libs.stripe.java)
     
+    // Firebase
+    implementation(libs.firebase.admin)
+    
     // Testing
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)

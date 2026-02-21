@@ -31,9 +31,12 @@ jwt:
   realm: trevnor
 
 stripe:
-  secretKey: ${STRIPE_SECRET_KEY?:"sk_test_your_stripe_secret_key"}
-  publishableKey: ${STRIPE_PUBLISHABLE_KEY?:"pk_test_your_stripe_publishable_key"}
-  webhookSecret: ${STRIPE_WEBHOOK_SECRET?:"whsec_your_webhook_secret"}
+  secretKey: secretKey
+  publishableKey: publishableKey
+  webhookSecret:
+
+firebase:
+  serviceAccountPath: /Users/furqan/Documents/Travenor/trevnor-server/firebase-service-account.json
 
 uploads:
   directory: ${UPLOAD_DIR?:"./uploads"}

@@ -13,6 +13,7 @@ kotlinx-serialization = "1.6.2"
 swagger = "2.2.22"
 swagger-ui = "5.10.3"
 stripe = "24.16.0"
+firebase-admin = "9.2.0"
 
 [libraries]
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
@@ -60,6 +61,9 @@ swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
 
 # Stripe
 stripe-java = { module = "com.stripe:stripe-java", version.ref = "stripe" }
+
+# Firebase
+firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase-admin" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

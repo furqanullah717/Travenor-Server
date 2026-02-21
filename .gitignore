@@ -38,3 +38,4 @@ out/
 ### Uploads ###
 uploads/
 !uploads/.gitkeep
+/firebase-service-account.json
